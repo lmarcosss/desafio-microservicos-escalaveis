@@ -12,6 +12,9 @@ import { db } from '../db/client.ts'
 import { schema } from '../db/schema/index.ts'
 import { randomUUID } from 'crypto'
 import { dispatchOrderCreated } from '../broker/messages/order-created.ts'
+import { trace } from '@opentelemetry/api'
+import { setTimeout } from 'node:timers/promises'
+import { tracer } from '../tracer/tracer.ts'
 
 const app = fastify().withTypeProvider<ZodTypeProvider>()
 
@@ -41,6 +44,16 @@ app.post('/orders',{ schema: {
         status: 'pending',
         amount,
     }).execute()
+
+    const span = tracer.startSpan("Deu ruim aqui")
+
+    span.setAttribute("teste", "Hello World")
+
+    await setTimeout(2000)
+
+    span.end()
+    
+    trace.getActiveSpan()?.setAttribute("order_id", orderId)
 
     dispatchOrderCreated({
         orderId,
